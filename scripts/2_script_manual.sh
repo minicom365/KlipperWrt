@@ -410,6 +410,31 @@ cat << "EOF" > /etc/logrotate.d/moonraker
 EOF
 
 echo " "
+echo " "
+echo "   ###########################################"
+echo "   ##  Do you want install extra packeges?  ##"
+echo "   ###########################################"
+echo " "
+choose(){
+    read -p "Enter [y] to continue [y/n]: " yn
+    case $yn in
+	y) 
+		opkg install luci-compat;
+		wget https://github.com/jerrykuku/luci-theme-argon/releases/download/v2.2.9/luci-theme-argon_2.2.9-20211016-1_all.ipk;
+		wget https://github.com/jerrykuku/luci-theme-argon/releases/download/v2.2.9/luci-app-argon-config_0.9-20210309_all.ipk;
+		wget https://github.com/acerun/luci-app-file_transfer/raw/master/luci-app-file_transfer_1.0-1_all.ipk;
+		opkg install luci-app-ttyd *.ipk;
+		rm *.ipk;;
+	n) 
+		echo "Quitting...";;
+	* ) echo "Please answer yes or no.";;
+    esac
+}
+
+choose;
+
+
+echo " "
 echo "#################"
 echo "###   Done!   ###"
 echo "#################"
