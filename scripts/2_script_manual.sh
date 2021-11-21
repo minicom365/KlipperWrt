@@ -74,14 +74,14 @@ echo "Installing dependencies..."
 mv /etc/opkg/distfeeds.conf /etc/opkg/distfeeds.conf_orig_old;
 mv /etc/opkg.conf /etc/opkg.conf_orig;
 
-## create new distfeeds.conf using 21.02.0 releases 
+## create new distfeeds.conf using 21.02.1 releases 
 cat << "EOF" > /etc/opkg/distfeeds.conf
-src/gz openwrt_core https://downloads.openwrt.org/releases/21.02.0/targets/ramips/mt76x8/packages
-src/gz openwrt_base https://downloads.openwrt.org/releases/21.02.0/packages/mipsel_24kc/base
-src/gz openwrt_luci https://downloads.openwrt.org/releases/21.02.0/packages/mipsel_24kc/luci
-src/gz openwrt_packages https://downloads.openwrt.org/releases/21.02.0/packages/mipsel_24kc/packages
-src/gz openwrt_routing https://downloads.openwrt.org/releases/21.02.0/packages/mipsel_24kc/routing
-src/gz openwrt_telephony https://downloads.openwrt.org/releases/21.02.0/packages/mipsel_24kc/telephony
+src/gz openwrt_core https://downloads.openwrt.org/releases/21.02.1/targets/ramips/mt7620/packages
+src/gz openwrt_base https://downloads.openwrt.org/releases/21.02.1/packages/mipsel_24kc/base
+src/gz openwrt_luci https://downloads.openwrt.org/releases/21.02.1/packages/mipsel_24kc/luci
+src/gz openwrt_packages https://downloads.openwrt.org/releases/21.02.1/packages/mipsel_24kc/packages
+src/gz openwrt_routing https://downloads.openwrt.org/releases/21.02.1/packages/mipsel_24kc/routing
+src/gz openwrt_telephony https://downloads.openwrt.org/releases/21.02.1/packages/mipsel_24kc/telephony
 EOF
 
 ## create new opkg.conf with check_signature disable
@@ -98,7 +98,7 @@ opkg update && opkg install git-http unzip htop zram-swap gcc;
 echo "Changing distfeeds for python2..."
 mv /etc/opkg/distfeeds.conf /etc/opkg/distfeeds.conf_orig;
 cat << "EOF" > /etc/opkg/distfeeds.conf
-src/gz openwrt_core https://downloads.openwrt.org/releases/19.07.7/targets/ramips/mt76x8/packages
+src/gz openwrt_core https://downloads.openwrt.org/releases/19.07.7/targets/ramips/mt7620/packages
 src/gz openwrt_base https://downloads.openwrt.org/releases/19.07.7/packages/mipsel_24kc/base
 src/gz openwrt_luci https://downloads.openwrt.org/releases/19.07.7/packages/mipsel_24kc/luci
 src/gz openwrt_packages https://downloads.openwrt.org/releases/19.07.7/packages/mipsel_24kc/packages
@@ -149,7 +149,6 @@ pip3 install --upgrade setuptools;
 echo "Installing pip3 packages..."
 pip3 install inotify-simple python-jose libnacl paho-mqtt==1.5.1;
 
-
 echo "Downloading lmdb and streaming-form-data package..."
 
 wget https://github.com/ihrapsa/KlipperWrt/raw/main/packages/python3-lmdb%2Bstreaming-form-data_packages_1.0-1_mipsel_24kc.ipk -P /root/;
@@ -165,6 +164,7 @@ echo "###############"
 echo " "
 
 echo "Installing nginx..."
+opkg update;
 opkg install nginx-ssl;
 
 echo " "
@@ -296,6 +296,8 @@ EOF
 
 /etc/init.d/mjpg-streamer enable;
 ln -s /etc/init.d/mjpg-streamer /etc/init.d/webcamd;
+ln -s /etc/config/mjpg-streamer /root/klipper_config/webcamd;
+
 
 echo " "
 echo "###################"
@@ -313,7 +315,7 @@ echo "#################"
 echo " "
 
 echo "Installing Tiemlapse packages..."
-wget https://github.com/FrYakaTKoP/moonraker/raw/dev-timelapse/moonraker/components/timelapse.py -P /root/moonraker/moonraker/components;
+wget https://github.com/mainsail-crew/moonraker-timelapse/raw/main/component/timelapse.py -P /root/moonraker/moonraker/components;
 opkg install wget-ssl;
 
 rm -rf /tmp/opkg-lists 
@@ -341,55 +343,16 @@ wget https://github.com/ihrapsa/KlipperWrt/raw/main/packages/ffmpeg/shine_3.1.1-
 opkg install /root/ffmpeg/*ipk --force-overwrite;
 rm -rf /root/ffmpeg;
 
-
-
 echo " "
-echo "########################"
-echo "### tty hotplug rule ###"
-echo "########################"
+echo "#######################"
+echo "###   Usb setting   ###"
+echo "#######################"
 echo " "
 
 echo "Install tty hotplug rule..."
-opkg update && opkg install usbutils;
-cat << "EOF" > /etc/hotplug.d/usb/22-tty-symlink
-# Description: Action executed on boot (bind) and with the system on the fly
-PRODID="1a86/7523/264" #change here according to "PRODUCT=" from grep command 
-SYMLINK="ttyPrinter" #you can change this to whatever you want just don't use spaces. Use this inside printer.cfg as serial port path
-if [ "${ACTION}" = "bind" ] ; then
-  case "${PRODUCT}" in
-    ${PRODID}) # mainboard product id prefix
-      DEVICE_TTY="$(ls /sys/${DEVPATH}/tty*/tty/)"
-      # Mainboard connected to USB1 slot
-      if [ "${DEVICENAME}" = "1-1.4:1.0" ] ; then
-        ln -s /dev/${DEVICE_TTY} /dev/${SYMLINK}
-        logger -t hotplug "Symlink from /dev/${DEVICE_TTY} to /dev/${SYMLINK} created"
-
-      # Mainboard connected to USB2 slot
-      elif [ "${DEVICENAME}" = "1-1.2:1.0" ] ; then
-        ln -s /dev/${DEVICE_TTY} /dev/${SYMLINK}
-        logger -t hotplug "Symlink from /dev/${DEVICE_TTY} to /dev/${SYMLINK} created"
-      fi
-    ;;
-  esac
-fi
-# Action to remove the symlinks
-if [ "${ACTION}" = "remove" ]  ; then
-  case "${PRODUCT}" in
-    ${PRODID})  #mainboard product id prefix
-     # Mainboard connected to USB1 slot
-      if [ "${DEVICENAME}" = "1-1.4:1.0" ] ; then
-        rm /dev/${SYMLINK}
-        logger -t hotplug "Symlink /dev/${SYMLINK} removed"
-
-      # Mainboard connected to USB2 slot
-      elif [ "${DEVICENAME}" = "1-1.2:1.0" ] ; then
-        rm /dev/${SYMLINK}
-        logger -t hotplug "Symlink /dev/${SYMLINK} removed"
-      fi
-    ;;
-  esac
-fi
-EOF
+opkg install usbutils;
+cmd="echo ""1d50 614e"" > /sys/bus/usb-serial/drivers/generic/new_id"
+echo -e "$cmd \n$(cat /etc/rc.local)" > /etc/rc.local
 
 echo " "
 echo "########################"
