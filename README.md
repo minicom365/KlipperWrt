@@ -1,6 +1,10 @@
 # KlipperWrt
  ---------------------------------------------------------------------------------
  
+### For Xiaomi Router R1C or any mt7620 device
+
+ ---------------------------------------------------------------------------------
+ 
  A guide to get _**Klipper**_ with _**fluidd**,_ _**Mainsail**_ or _**Duet-Web-Control**_ on OpenWrt embeded devices like the _Creality Wi-Fi Box_.
  
  ---------------------------------------------------------------------------------
